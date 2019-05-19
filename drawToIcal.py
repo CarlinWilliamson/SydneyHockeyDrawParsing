@@ -37,15 +37,22 @@ class Game:
 
 pdf = ""
 
+# read the pdf and create one long string
 with open("doc.pdf", 'rb') as f:
 	reader = PyPDF2.PdfFileReader(f)
 	for page in reader.pages:
 		pdf += page.extractText()
 
+# remove the junk that is at the start/end of each page
 pdf = re.sub(r'Accessed.*?of \d\d', r'', pdf)
 pdf = re.sub(r'Round.*?\d\d\d\d', r'', pdf)
+
+# The fields at olympic park appear as "Olympic 1" and "Olympic Pitch 2"
+# changing them to be the same 
 pdf = re.sub(r'Pitch ', r'', pdf)
 
+# change team names so they have a leading capital followed by lower case letters
+# this makes the regex is easier as there is no spaces or markers after we import the pdf
 for key, value in TEAM_REPLACEMENTS.items():
         pdf = pdf.replace(key, value)
 
@@ -55,29 +62,34 @@ for ground in GROUNDS:
 	for match in re.finditer(ground, pdf):
 		ground_indexes.append(match.start())
 
+
+# between each of the indexes in ground_indexes is information about all the games at that ground in that grade
 matches = []
 ground_indexes.sort()
-
 for i, index in enumerate(ground_indexes):
+	
+	# create a string from the start of one ground to the next
 	g = ""
 	if (i == len(ground_indexes)-1):
-		g = pdf[index:]
+		g = pdf[index:] # avoid index out of bound error
 	else:
 		g = pdf[index:ground_indexes[i+1]]
 
-	for (ground, date, time, home, away, other) in re.findall(r'(.*?)DayTimeHomeAway(.*?)(\d\d:\d\d)([A-Z\/]+[a-z_]*)([A-Z\/]+[a-z_]*)(.*)', g):
+	for (ground, date, time, home, away, otherGames) in re.findall(r'(.*?)DayTimeHomeAway(.*?)(\d\d:\d\d)([A-Z\/]+[a-z_]*)([A-Z\/]+[a-z_]*)(.*)', g):
 		matches.append(Game(ground, date, time, home, away))
-		while (len(other) > 5):
+
+		# There can be more than one game at a specific ground in that round
+		# keep parsing those games until we run out of them
+		while (len(otherGames) > 5):
 			reg = re.search(r'(.*?)(\d\d:\d\d)([A-Z\/]+[a-z_]*)([A-Z\/]+[a-z_]*)(.*)', other)
 			matches.append(Game(ground, reg.group(1), reg.group(2), reg.group(3), reg.group(4)))
-			other = reg.group(5)
+			otherGames = reg.group(5)
 
+# convert our list of matches into a iCalendar
 c = Calendar()
-print(len(matches))
 for match in matches:
 	e = Event(name="{} vs {}".format(match.home, match.away), begin=match.date, location=match.ground)
 	c.events.add(e)
-
 
 with open('matches.ics', 'w') as my_file:
 	my_file.writelines(c)
