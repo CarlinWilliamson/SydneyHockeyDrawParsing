@@ -5,10 +5,10 @@ import pytz
 import datetime
 import argparse
 
-GROUNDS = ["Pennant Hills 1", "Pennant Hills 2", "Sutherland", "Ryde", "Cintra Park", "Lidcombe", "Bankstown", "Olympic 1", "Olympic 2", "Daceyville"]
+GROUNDS = ["Pennant Hills 1", "Pennant Hills 2", "Sutherland", "Ryde", "Cintra Park", "Lidcombe", "Bankstown", "Olympic 1", "Olympic 2", "Daceyville", "Kyeemagh", "Greenhills \(Marang Parkland\)"]
 
 # To make the regex easier we convert team names to a Capital letter followed by lower case letters with no spaces
-TEAM_REPLACEMENTS = {"UNSW":"Unsw", "UTS":"Uts", "Northern Districts":"Northerndistricts", "NWS/Baulkham Hills":"NWSBaulkhamhills", "Ryde HH":"Ryde"}
+TEAM_REPLACEMENTS = {"UNSW":"Unsw", "UTS":"Uts", "Northern Districts":"Northerndistricts", "NWS/Baulkham Hills":"NWSBaulkhamhills", "Ryde HH":"Ryde", "St George/Rand":"Stgeorgerand", "Macquarie Uni":"Macquarieuni", "Ryde White":"Rydewhite", "Ryde Black":"Rydeblack", "Sydney Uni":"Sydneyuni", "GNS":"Gns", "Moorebank Liverpool":"Moorebankliverpool", "NWS/BH":"Nwsbh"}
 INV_TEAM_REPLACEMENTS = {j: k for k,j in TEAM_REPLACEMENTS.items()}
 
 MONTH_TO_NUMBER = {"Jan":1, "Feb":2, "Mar":3, "Apr":4, "May":5, "Jun":6, "Jul":7, "Aug":8, "Sep":9, "Oct":10, "Nov":11, "Dec":12}
@@ -32,14 +32,13 @@ class Game:
 
 		self.date = timezone.localize(d)
 		self.ground = ground
-		self.time = time
 
 		# change the team names back
 		self.home = INV_TEAM_REPLACEMENTS.get(home, home)
 		self.away = INV_TEAM_REPLACEMENTS.get(away, away)
 	
 	def __str__(self):
-		return "{} {} {}\n{} vs {}".format(self.time, self.date, self.ground, self.home, self.away)
+		return "{} {}\n{} vs {}\n".format(self.date, self.ground, self.home, self.away)
 
 parser = argparse.ArgumentParser(description='Convert a pdf of a Sydney Hockey draw into an ical')
 parser.add_argument("filename", help='the file from which the ical should be created')
