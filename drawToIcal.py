@@ -41,10 +41,10 @@ class Game:
 		return "{} {}\n{} vs {}\n".format(self.date, self.ground, self.home, self.away)
 
 parser = argparse.ArgumentParser(description='Convert a pdf of a Sydney Hockey draw into an ical')
-parser.add_argument("filename", help='the file from which the ical should be created')
-parser.add_argument('--team', dest='team', help='specify a team for which the events are parse')
+parser.add_argument("filename", help='The file from which the ical should be created')
+parser.add_argument('--team', dest='team', help='Specify a team for which the events are parse')
+parser.add_argument('--output', dest='output', help='Specify the filename of the iCalendare. By default we use the filename (with the .ics extension)')
 args = parser.parse_args()
-
 
 # read the pdf and create one long string
 pdf = ""
@@ -84,13 +84,17 @@ for i, index in enumerate(ground_indexes):
 	else:
 		g = pdf[index:ground_indexes[i+1]]
 
+	#print(g)
 	for (ground, date, time, home, away, other_games) in re.findall(r'(.*?)DayTimeHomeAway(.*?)(\d\d:\d\d)([A-Z\/]+[a-z_]*)([A-Z\/]+[a-z_]*)(.*)', g):
+		#print(date)
+		#print((ground, date, time, home, away, other_games))
 		matches.append(Game(ground, date, time, home, away))
 
 		# There can be more than one game at a specific ground in that round
 		# keep parsing those games until we run out of them
 		while len(other_games) > 5:
 			reg = re.search(r'(.*?)(\d\d:\d\d)([A-Z\/]+[a-z_]*)([A-Z\/]+[a-z_]*)(.*)', other_games)
+			#print(other_games)
 			matches.append(Game(ground, reg.group(1), reg.group(2), reg.group(3), reg.group(4)))
 			other_games = reg.group(5)
 
@@ -101,14 +105,20 @@ for match in matches:
 	if not args.team:
 		name = "{} vs {}".format(match.home, match.away)
 	elif args.team in match.home:
-		name = "{} vs {}".format(args.team, match.away)
+		name = "{} vs {}".format(match.home, match.away)
 	elif args.team in match.away:
-		name = "{} vs {}".format(args.team, match.home)
+		name = "{} vs {}".format(match.away, match.home)
 	else:
 		continue
 
 	e = Event(name=name, begin=match.date, location=match.ground)
 	c.events.add(e)
 
-with open(args.filename.split(".")[0] + ".ics", "w") as my_file:
+if not len(c.events) and args.team:
+	print("Did not find any matches for {}. Make sure it is spelt same as it is in the pdf".format(args.team))
+
+filename = args.filename.split(".")[0] + ".ics"
+if (args.output):
+	filename = args.output + ".ics"
+with open(filename, "w") as my_file:
 	my_file.writelines(c)
